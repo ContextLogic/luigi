@@ -37,7 +37,8 @@ with open('README.rst') as fobj:
     long_description = readme_note + fobj.read()
 
 install_requires = [
-    'tornado<5.0',
+    'cached_property<2.0',
+    'pyparsing<3.0',
     'python-daemon<3.0',
 ]
 

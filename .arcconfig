@@ -1,0 +1,11 @@
+{
+  "project_id" : "luigi",
+  "conduit_uri" : "https://phab.wish.com/",
+
+  "lint.pylint.options" : [],
+  "lint.pylint.rcfile"  : ".arcpylint_rcfile",
+
+  "lint.pylint.codes.error"   : "^E.*",
+  "lint.pylint.codes.warning" : "^W.*",
+  "lint.pylint.advice"        : ""
+}
