@@ -106,10 +106,11 @@ class RemoteScheduler(Scheduler):
             connect_timeout = config.getfloat('core', 'rpc-connect-timeout', 10.0)
         self._connect_timeout = connect_timeout
 
-        if HAS_REQUESTS:
-            self._fetcher = RequestsFetcher(requests.Session())
-        else:
-            self._fetcher = URLLibFetcher()
+        ## KEVIN: RequestsFetcher doesn't put the request arguments in the
+        ## query string and we are using an older version of tornado which wont
+        ## look in self.request.body. If we use this fetcher the arguments will
+        ## show up in self.requests.arguments
+        self._fetcher = URLLibFetcher()
 
     def _wait(self):
         time.sleep(30)
