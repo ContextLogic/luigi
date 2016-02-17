@@ -170,7 +170,11 @@ def _get_str_ranging_multiple_parameters(attributes, tasks, unique_param):
 def _get_set_of_params(tasks):
     params = {}
     for param in tasks[0].get_params():
-        params[param] = {getattr(task, param[0]) for task in tasks}
+        # ignore params if they are dicts. Luigi does not normally support dicts
+        # as params, and we are not going to implement supporting displaying
+        # them in the execution summary.
+        params[param[0]] = {getattr(task, param[0]) for task in tasks if not \
+                                isinstance(getattr(task, param[0]), dict)}
     return params
 
 
@@ -185,11 +189,16 @@ def _ranging_attributes(attributes, unique_param):
     Checks if there is a continuous range
     """
     if len(attributes) > 2:
-        if unique_param[1].next_in_enumeration(attributes[0]) is None:
-            return False
-        for i in range(1, len(attributes)):
-            if unique_param[1].next_in_enumeration(attributes[i - 1]) != attributes[i]:
+        # if params are dicts, this fails completely. just return False if
+        # there is a parse error on the param
+        try:
+            if unique_param[1].next_in_enumeration(attributes[0]) is None:
                 return False
+            for i in range(1, len(attributes)):
+                if unique_param[1].next_in_enumeration(attributes[i - 1]) != attributes[i]:
+                    return False
+        except:
+            return False
     return True
 
 
