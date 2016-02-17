@@ -87,10 +87,17 @@ class Register(abc.ABCMeta):
         if h is None:  # disabled
             return instantiate()
 
+        # ignore dict param values. inconsequential and screws up hashing
         params = cls.get_params()
         param_values = cls.get_param_values(params, args, kwargs)
+        param_values_new = []
+        for param in param_values:
+            if isinstance(param[1], dict) is True:
+                continue
+            else:
+                param_values_new.append(param)
 
-        k = (cls, tuple(param_values))
+        k = (cls, tuple(param_values_new))
 
         try:
             hash(k)
