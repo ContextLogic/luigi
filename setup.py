@@ -39,6 +39,7 @@ with open('README.rst') as fobj:
 install_requires = [
     'cached_property<2.0',
     'pyparsing<3.0',
+    'lockfile==0.10.2',
     'python-daemon<3.0',
 ]
 
