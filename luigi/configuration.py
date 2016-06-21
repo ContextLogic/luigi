@@ -75,13 +75,6 @@ class LuigiConfigParser(ConfigParser):
                           "Found: {paths!r}".format(paths=deprecated_paths),
                           DeprecationWarning)
 
-        # read method doesn't work on lists, bug
-        for path in cls._config_paths:
-            try:
-                cls.instance().read(path)
-            except Exception:
-                pass
-
         return cls.instance().read(cls._config_paths)
 
     def _get_with_default(self, method, section, option, default, expected_type=None, **kwargs):
