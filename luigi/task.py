@@ -27,6 +27,7 @@ except ImportError:
 import logging
 import traceback
 import warnings
+import socket
 
 from luigi import six
 
@@ -447,8 +448,9 @@ class Task(object):
 
         Default behavior is to return a string representation of the stack trace.
         """
-
-        traceback_string = traceback.format_exc()
+        #additional behaviour of hostname in failure message
+        hostname = "Hostname of Task failed : %s\n" % socket.gethostname()  
+        traceback_string = hostname + traceback.format_exc()
         return "Runtime error:\n%s" % traceback_string
 
     def on_success(self):
