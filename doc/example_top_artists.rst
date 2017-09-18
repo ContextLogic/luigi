@@ -63,8 +63,8 @@ There are several pieces of this snippet that deserve more explanation.
    :class:`~luigi.task.Task` you don't have to implement the ``run``
    method. For instance, for the :class:`~luigi.contrib.hadoop.JobTask`
    subclass you implement a *mapper* and *reducer* instead.
--  :class:`~luigi.contrib.hdfs.HdfsTarget` is a built in class that makes it
-   easy to read/write from/to HDFS. It also makes all file operations
+-  :class:`~luigi.LocalTarget` is a built in class that makes it
+   easy to read/write from/to the local filesystem. It also makes all file operations
    atomic, which is nice in case your script crashes for any reason.
 
 Running this Locally
@@ -72,10 +72,16 @@ Running this Locally
 
 Try running this using eg.
 
-::
+.. code-block:: console
 
     $ cd examples
     $ luigi --module top_artists AggregateArtists --local-scheduler --date-interval 2012-06
+
+Note that  *top_artists* needs to be in your PYTHONPATH, or else this can produce an error (*ImportError: No module named top_artists*). Add the current working directory to the command PYTHONPATH with:
+
+.. code-block:: console
+
+    $ PYTHONPATH='.' luigi --module top_artists AggregateArtists --local-scheduler --date-interval 2012-06
 
 You can also try to view the manual using `--help` which will give you an
 overview of the options.
@@ -120,7 +126,8 @@ here is how this could look like, instead of the class above.
 Note that :class:`luigi.contrib.hadoop.JobTask` doesn't require you to implement a
 :func:`~luigi.task.Task.run` method. Instead, you typically implement a
 :func:`~luigi.contrib.hadoop.JobTask.mapper` and
-:func:`~luigi.contrib.hadoop.JobTask.reducer` method.
+:func:`~luigi.contrib.hadoop.JobTask.reducer` method. *mapper* and *combiner* require
+yielding tuple of only two elements: key and value. Both key and value also may be a tuple.
 
 Step 2 – Find the Top Artists
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,7 +172,7 @@ defines a dependency on the previous task (*AggregateArtists*).
 This means that if the output of *AggregateArtists* does not exist,
 the task will run before *Top10Artists*.
 
-::
+.. code-block:: console
 
     $ luigi --module examples.top_artists Top10Artists --local-scheduler --date-interval 2012-07
 
@@ -181,7 +188,7 @@ you can reuse for a lot of different tasks.
 
 .. code:: python
 
-    class ArtistToplistToDatabase(luigi.postgres.CopyToTable):
+    class ArtistToplistToDatabase(luigi.contrib.postgres.CopyToTable):
         date_interval = luigi.DateIntervalParameter()
         use_hadoop = luigi.BoolParameter()
 
@@ -219,9 +226,9 @@ your script will try to connect to the central planner,
 by default at localhost port 8082.
 If you run
 
-::
+.. code-block:: console
 
-    luigid
+    $ luigid
 
 in the background and then run your task without the ``--local-scheduler`` flag,
 then your script will now schedule through a centralized server.

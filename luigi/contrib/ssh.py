@@ -91,9 +91,7 @@ class RemoteContext(object):
             return self.host
 
     def _prepare_cmd(self, cmd):
-        connection_cmd = ["ssh", self._host_ref(),
-                          "-S", "none",  # disable ControlMaster since it causes all sorts of weird behaviour with subprocesses...
-                          ]
+        connection_cmd = ["ssh", self._host_ref(), "-o", "ControlMaster=no"]
         if self.sshpass:
             connection_cmd = ["sshpass", "-e"] + connection_cmd
         else:
@@ -180,7 +178,7 @@ class RemoteFileSystem(luigi.target.FileSystem):
             path = path[:-1]
 
         path = path or '.'
-        listing = self.remote_context.check_output(["find", path, "-type", "f"]).splitlines()
+        listing = self.remote_context.check_output(["find", "-L", path, "-type", "f"]).splitlines()
         return [v.decode('utf-8') for v in listing]
 
     def isdir(self, path):
@@ -236,8 +234,7 @@ class RemoteFileSystem(luigi.target.FileSystem):
             cmd.append("-B")
         if self.remote_context.no_host_key_check:
             cmd.extend(['-o', 'UserKnownHostsFile=/dev/null',
-                        '-o', 'StrictHostKeyChecking=no',
-                        '-o', 'ForwardAgent=yes'])
+                        '-o', 'StrictHostKeyChecking=no'])
         if self.remote_context.key_file:
             cmd.extend(["-i", self.remote_context.key_file])
         if self.remote_context.port:
@@ -348,7 +345,7 @@ class RemoteTarget(luigi.target.FileSystemTarget):
             else:
                 return file_reader
         else:
-            raise Exception("mode must be r/w")
+            raise Exception("mode must be 'r' or 'w' (got: %s)" % mode)
 
     def put(self, local_path):
         self.fs.put(local_path, self.path)

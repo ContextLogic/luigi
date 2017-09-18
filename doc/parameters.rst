@@ -2,7 +2,7 @@ Parameters
 ----------
 
 Parameters is the Luigi equivalent of creating a constructor for each Task.
-Luigi requires you to declare these parameters instantiating
+Luigi requires you to declare these parameters by instantiating
 :class:`~luigi.parameter.Parameter` objects on the class scope:
 
 .. code:: python
@@ -11,13 +11,13 @@ Luigi requires you to declare these parameters instantiating
         date = luigi.DateParameter(default=datetime.date.today())
         # ...
 
-By doing this, Luigi can do take care of all the boilerplate code that
+By doing this, Luigi can take care of all the boilerplate code that
 would normally be needed in the constructor.
 Internally, the DailyReport object can now be constructed by running
 ``DailyReport(datetime.date(2012, 5, 10))`` or just ``DailyReport()``.
 Luigi also creates a command line parser that automatically handles the
 conversion from strings to Python types.
-This way you can invoke the job on the command line eg. by passing ``--date 2012-15-10``.
+This way you can invoke the job on the command line eg. by passing ``--date 2012-05-10``.
 
 The parameters are all set to their values on the Task object instance,
 i.e.
@@ -98,7 +98,7 @@ subclasses of :class:`~luigi.parameter.Parameter`. There are a few of them, like
 :class:`~luigi.parameter.IntParameter`,
 :class:`~luigi.parameter.FloatParameter`, etc.
 
-Python is not a strongly typed language and you don't have to specify the types
+Python is not a statically typed language and you don't have to specify the types
 of any of your parameters.
 You can simply use the base class :class:`~luigi.parameter.Parameter` if you don't care.
 
@@ -133,7 +133,7 @@ It is still possible to override it inside Python if you instantiate ``TaskA(x=4
 All parameters can also be set from the configuration file.
 For instance, you can put this in the config:
 
-.. code:: console
+.. code:: ini
 
     [TaskA]
     x: 45
@@ -153,4 +153,3 @@ Parameters are resolved in the following order of decreasing priority:
 4. Any default value provided to the parameter (applies on a class level)
 
 See the :class:`~luigi.parameter.Parameter` class for more information.
-

@@ -15,15 +15,13 @@
 # limitations under the License.
 #
 
-from helpers import unittest
-
 import luigi
 import luigi.date_interval
 import luigi.notifications
 import sys
 from luigi.interface import _WorkerSchedulerFactory
 from luigi.worker import Worker
-from mock import Mock, patch
+from mock import Mock, patch, MagicMock
 from helpers import LuigiTestCase
 
 luigi.notifications.DEBUG = True
@@ -33,7 +31,6 @@ class InterfaceTest(LuigiTestCase):
 
     def setUp(self):
         self.worker = Worker()
-        self.worker.stop = Mock()
 
         self.worker_scheduler_factory = _WorkerSchedulerFactory()
         self.worker_scheduler_factory.create_worker = Mock(return_value=self.worker)
@@ -64,6 +61,23 @@ class InterfaceTest(LuigiTestCase):
 
         self.assertFalse(self._run_interface())
 
+    def test_stops_worker_on_add_exception(self):
+        worker = MagicMock()
+        self.worker_scheduler_factory.create_worker = Mock(return_value=worker)
+        worker.add = Mock(side_effect=AttributeError)
+
+        self.assertRaises(AttributeError, self._run_interface)
+        self.assertTrue(worker.__exit__.called)
+
+    def test_stops_worker_on_run_exception(self):
+        worker = MagicMock()
+        self.worker_scheduler_factory.create_worker = Mock(return_value=worker)
+        worker.add = Mock(side_effect=[True, True])
+        worker.run = Mock(side_effect=AttributeError)
+
+        self.assertRaises(AttributeError, self._run_interface)
+        self.assertTrue(worker.__exit__.called)
+
     def test_just_run_main_task_cls(self):
         class MyTestTask(luigi.Task):
             pass
@@ -79,7 +93,3 @@ class InterfaceTest(LuigiTestCase):
 
     def _run_interface(self):
         return luigi.interface.build([self.task_a, self.task_b], worker_scheduler_factory=self.worker_scheduler_factory)
-
-
-if __name__ == '__main__':
-    unittest.main()

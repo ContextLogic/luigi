@@ -98,8 +98,11 @@ class RunAnywayTarget(luigi.Target):
         """
         Creates temporary file to mark the task as `done`
         """
-        logger.info('Marking %s as done', self.task_id)
+        logger.info('Marking %s as done', self)
 
         fn = self.get_path()
-        os.makedirs(os.path.dirname(fn), exist_ok=True)
+        try:
+            os.makedirs(os.path.dirname(fn))
+        except OSError:
+            pass
         open(fn, 'w').close()

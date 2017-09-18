@@ -23,7 +23,6 @@ Originally written by Alan Brenner <alan@magnetic.com> github.com/alanbbr
 
 
 from luigi.contrib.hdfs import config as hdfs_config
-from luigi.contrib.hdfs import error as hdfs_error
 from luigi.contrib.hdfs import abstract_client as hdfs_abstract_client
 from luigi import six
 import luigi.contrib.target
@@ -89,12 +88,9 @@ class SnakebiteHdfsClient(hdfs_abstract_client.HdfsFileSystem):
         :type path: string
         :return: boolean, True if path exists in HDFS
         """
-        try:
-            return self.get_bite().test(path, exists=True)
-        except Exception as err:    # IGNORE:broad-except
-            raise hdfs_error.HDFSCliError("snakebite.test", -1, str(err), repr(err))
+        return self.get_bite().test(path, exists=True)
 
-    def rename(self, path, dest):
+    def move(self, path, dest):
         """
         Use snakebite.rename, if available.
 
@@ -125,9 +121,9 @@ class SnakebiteHdfsClient(hdfs_abstract_client.HdfsFileSystem):
         from snakebite.errors import FileAlreadyExistsException
         try:
             self.get_bite().rename2(path, dest, overwriteDest=False)
-            return True
         except FileAlreadyExistsException:
-            return False
+            # Unfortunately python2 don't allow exception chaining.
+            raise luigi.target.FileAlreadyExists()
 
     def remove(self, path, recursive=True, skip_trash=False):
         """

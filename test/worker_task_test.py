@@ -19,7 +19,6 @@ from subprocess import check_call
 import sys
 
 from helpers import LuigiTestCase
-import json
 import mock
 from psutil import Process
 from time import sleep
@@ -56,19 +55,23 @@ class WorkerTaskTest(LuigiTestCase):
 class TaskProcessTest(LuigiTestCase):
 
     def test_update_result_queue_on_success(self):
+        # IMO this test makes no sense as it tests internal behavior and have
+        # already broken once during internal non-changing refactoring
         class SuccessTask(luigi.Task):
             def on_success(self):
                 return "test success expl"
 
         task = SuccessTask()
         result_queue = multiprocessing.Queue()
-        task_process = TaskProcess(task, 1, result_queue)
+        task_process = TaskProcess(task, 1, result_queue, mock.Mock())
 
         with mock.patch.object(result_queue, 'put') as mock_put:
             task_process.run()
-            mock_put.assert_called_once_with((task.task_id, DONE, json.dumps("test success expl"), [], None))
+            mock_put.assert_called_once_with((task.task_id, DONE, "test success expl", [], None))
 
     def test_update_result_queue_on_failure(self):
+        # IMO this test makes no sense as it tests internal behavior and have
+        # already broken once during internal non-changing refactoring
         class FailTask(luigi.Task):
             def run(self):
                 raise BaseException("Uh oh.")
@@ -78,11 +81,11 @@ class TaskProcessTest(LuigiTestCase):
 
         task = FailTask()
         result_queue = multiprocessing.Queue()
-        task_process = TaskProcess(task, 1, result_queue)
+        task_process = TaskProcess(task, 1, result_queue, mock.Mock())
 
         with mock.patch.object(result_queue, 'put') as mock_put:
             task_process.run()
-            mock_put.assert_called_once_with((task.task_id, FAILED, json.dumps("test failure expl"), [], []))
+            mock_put.assert_called_once_with((task.task_id, FAILED, "test failure expl", [], []))
 
     def test_cleanup_children_on_terminate(self):
         """
@@ -97,7 +100,7 @@ class TaskProcessTest(LuigiTestCase):
         queue = mock.Mock()
         worker_id = 1
 
-        task_process = TaskProcess(task, worker_id, queue)
+        task_process = TaskProcess(task, worker_id, queue, mock.Mock())
         task_process.start()
 
         parent = Process(task_process.pid)

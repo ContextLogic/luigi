@@ -1,12 +1,9 @@
 import os
 import argparse
 import logging
+import logging.config
 import sys
 
-import luigi.interface
-import luigi.server
-import luigi.process
-import luigi.configuration
 from luigi.retcodes import run_with_retcodes
 
 
@@ -15,6 +12,9 @@ def luigi_run(argv=sys.argv[1:]):
 
 
 def luigid(argv=sys.argv[1:]):
+    import luigi.server
+    import luigi.process
+    import luigi.configuration
     parser = argparse.ArgumentParser(description=u'Central luigi server')
     parser.add_argument(u'--background', help=u'Run in background mode', action='store_true')
     parser.add_argument(u'--pidfile', help=u'Write pidfile')
@@ -41,5 +41,16 @@ def luigid(argv=sys.argv[1:]):
             logging.basicConfig(level=logging.INFO, format=luigi.process.get_log_format(),
                                 filename=os.path.join(opts.logdir, "luigi-server.log"))
         else:
-            logging.basicConfig(level=logging.INFO, format=luigi.process.get_log_format())
-        luigi.server.run(api_port=opts.port, address=opts.address)
+            config = luigi.configuration.get_config()
+            logging_conf = None
+            if not config.getboolean('core', 'no_configure_logging', False):
+                logging_conf = config.get('core', 'logging_conf_file', None)
+                if logging_conf is not None and not os.path.exists(logging_conf):
+                    raise Exception("Error: Unable to locate specified logging configuration file!")
+            if logging_conf is not None:
+                print("Configuring logging from file: {}".format(logging_conf))
+                logging.config.fileConfig(logging_conf)
+            else:
+                print("Defaulting to basic logging; consider specifying logging_conf_file in luigi.cfg.")
+                logging.basicConfig(level=logging.INFO, format=luigi.process.get_log_format())
+        luigi.server.run(api_port=opts.port, address=opts.address, unix_socket=opts.unix_socket)

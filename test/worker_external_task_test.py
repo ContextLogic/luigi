@@ -13,20 +13,22 @@
 # the License.
 
 import luigi
-from luigi.file import LocalTarget
-from luigi.scheduler import CentralPlannerScheduler
+from luigi.local_target import LocalTarget
+from luigi.scheduler import Scheduler
 import luigi.server
 import luigi.worker
+import luigi.task
 from mock import patch
 from helpers import with_config, unittest
 import os
 import tempfile
+import shutil
 
 
 class TestExternalFileTask(luigi.ExternalTask):
     """ Mocking tasks is a pain, so touch a file instead """
     path = luigi.Parameter()
-    times_to_call = luigi.Parameter()
+    times_to_call = luigi.IntParameter()
 
     def __init__(self, *args, **kwargs):
         super(TestExternalFileTask, self).__init__(*args, **kwargs)
@@ -52,7 +54,7 @@ class TestTask(luigi.Task):
     Requires a single file dependency
     """
     tempdir = luigi.Parameter()
-    complete_after = luigi.Parameter()
+    complete_after = luigi.IntParameter()
 
     def __init__(self, *args, **kwargs):
         super(TestTask, self).__init__(*args, **kwargs)
@@ -73,34 +75,36 @@ class TestTask(luigi.Task):
 
 
 class WorkerExternalTaskTest(unittest.TestCase):
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp(prefix='luigi-test-')
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
 
     def _assert_complete(self, tasks):
         for t in tasks:
             self.assert_(t.complete())
 
     def _build(self, tasks):
-        self.scheduler = CentralPlannerScheduler(prune_on_get_work=True)
-        w = luigi.worker.Worker(scheduler=self.scheduler, worker_processes=1)
-        for t in tasks:
-            w.add(t)
-        w.run()
-        w.stop()
+        with self._make_worker() as w:
+            for t in tasks:
+                w.add(t)
+            w.run()
+
+    def _make_worker(self):
+        self.scheduler = Scheduler(prune_on_get_work=True)
+        return luigi.worker.Worker(scheduler=self.scheduler, worker_processes=1)
 
     def test_external_dependency_already_complete(self):
         """
         Test that the test task completes when its dependency exists at the
         start of the execution.
         """
-        tempdir = tempfile.mkdtemp(prefix='luigi-test-')
-        test_task = TestTask(tempdir=tempdir, complete_after=1)
+        test_task = TestTask(tempdir=self.tempdir, complete_after=1)
         luigi.build([test_task], local_scheduler=True)
 
         assert os.path.exists(test_task.dep_path)
         assert os.path.exists(test_task.output_path)
-
-        os.unlink(test_task.dep_path)
-        os.unlink(test_task.output_path)
-        os.rmdir(tempdir)
 
         # complete() is called once per failure, twice per success
         assert test_task.dependency.times_called == 2
@@ -113,17 +117,11 @@ class WorkerExternalTaskTest(unittest.TestCase):
         """
         assert luigi.worker.worker().retry_external_tasks is True
 
-        tempdir = tempfile.mkdtemp(prefix='luigi-test-')
-
-        test_task = TestTask(tempdir=tempdir, complete_after=10)
+        test_task = TestTask(tempdir=self.tempdir, complete_after=10)
         self._build([test_task])
 
         assert os.path.exists(test_task.dep_path)
         assert os.path.exists(test_task.output_path)
-
-        os.unlink(test_task.dep_path)
-        os.unlink(test_task.output_path)
-        os.rmdir(tempdir)
 
         self.assertGreaterEqual(test_task.dependency.times_called, 10)
 
@@ -140,17 +138,57 @@ class WorkerExternalTaskTest(unittest.TestCase):
         """
         assert luigi.worker.worker().retry_external_tasks is True
 
-        tempdir = tempfile.mkdtemp(prefix='luigi-test-')
-
         with patch('random.uniform', return_value=0.001):
-            test_task = TestTask(tempdir=tempdir, complete_after=5)
+            test_task = TestTask(tempdir=self.tempdir, complete_after=5)
             self._build([test_task])
 
         assert os.path.exists(test_task.dep_path)
         assert os.path.exists(test_task.output_path)
 
-        os.unlink(test_task.dep_path)
-        os.unlink(test_task.output_path)
-        os.rmdir(tempdir)
+        self.assertGreaterEqual(test_task.dependency.times_called, 5)
+
+    def test_external_dependency_bare(self):
+        """
+        Test ExternalTask without altering global settings.
+        """
+        assert luigi.worker.worker().retry_external_tasks is False
+
+        test_task = TestTask(tempdir=self.tempdir, complete_after=5)
+
+        scheduler = luigi.scheduler.Scheduler(retry_delay=0.01,
+                                              prune_on_get_work=True)
+        with luigi.worker.Worker(
+                retry_external_tasks=True, scheduler=scheduler,
+                keep_alive=True, wait_interval=0.00001, wait_jitter=0) as w:
+            w.add(test_task)
+            w.run()
+
+        assert os.path.exists(test_task.dep_path)
+        assert os.path.exists(test_task.output_path)
 
         self.assertGreaterEqual(test_task.dependency.times_called, 5)
+
+    @with_config({'worker': {'retry_external_tasks': 'true', },
+                  'scheduler': {'retry_delay': '0.0'}})
+    def test_external_task_complete_but_missing_dep_at_runtime(self):
+        """
+        Test external task complete but has missing upstream dependency at
+        runtime.
+
+        Should not get "unfulfilled dependencies" error.
+        """
+        test_task = TestTask(tempdir=self.tempdir, complete_after=3)
+        test_task.run = NotImplemented
+
+        assert len(test_task.deps()) > 0
+
+        # split up scheduling task and running to simulate runtime scenario
+        with self._make_worker() as w:
+            w.add(test_task)
+        # touch output so test_task should be considered complete at runtime
+        open(test_task.output_path, 'a').close()
+        success = w.run()
+
+        self.assertTrue(success)
+        # upstream dependency output didn't exist at runtime
+        self.assertFalse(os.path.exists(test_task.dep_path))

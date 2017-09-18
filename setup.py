@@ -41,6 +41,7 @@ install_requires = [
     'pyparsing<3.0',
     'pbr==1.8.1',
     'lockfile==0.10.2',
+    'tornado>=4.0,<5',
     'python-daemon<3.0',
 ]
 
@@ -49,14 +50,14 @@ if os.environ.get('READTHEDOCS', None) == 'True':
     install_requires.append('sqlalchemy')
     # readthedocs don't like python-daemon, see #1342
     install_requires.remove('python-daemon<3.0')
+    install_requires.append('sphinx>=1.4.4')  # Value mirrored in doc/conf.py
 
 setup(
     name='luigi',
-    version='2.0.0',
+    version='2.7.0',
     description='Workflow mgmgt + task scheduling + dependency resolution',
     long_description=long_description,
-    author='Erik Bernhardsson',
-    author_email='erikbern@spotify.com',
+    author='The Luigi Authors',
     url='https://github.com/spotify/luigi',
     license='Apache License 2.0',
     packages=[
@@ -74,6 +75,8 @@ setup(
             'luigid = luigi.cmdline:luigid',
             'luigi-grep = luigi.tools.luigi_grep:main',
             'luigi-deps = luigi.tools.deps:main',
+            'luigi-deps-tree = luigi.tools.deps_tree:main',
+            'luigi-migrate = luigi.tools.migrate:main'
         ]
     },
     install_requires=install_requires,
@@ -87,6 +90,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: System :: Monitoring',
     ],
 )

@@ -95,6 +95,7 @@ class CopyToTable(luigi.task.MixinNaiveBulkComplete, luigi.Task):
             query = "CREATE TABLE {table} ({coldefs})".format(table=self.table, coldefs=coldefs)
             connection.cursor().execute(query)
 
+    @property
     def update_id(self):
         """
         This update id will be a unique identifier for this insert on this table.
@@ -119,6 +120,78 @@ class CopyToTable(luigi.task.MixinNaiveBulkComplete, luigi.Task):
         if hasattr(self, "clear_table"):
             raise Exception("The clear_table attribute has been removed. Override init_copy instead!")
 
+    def post_copy(self, connection):
+        """
+        Override to perform custom queries.
+
+        Any code here will be formed in the same transaction as the main copy, just after copying data.
+        Example use cases include cleansing data in temp table prior to insertion into real table.
+        """
+        pass
+
     @abc.abstractmethod
     def copy(self, cursor, file):
         raise NotImplementedError("This method must be overridden")
+
+
+class Query(luigi.task.MixinNaiveBulkComplete, luigi.Task):
+    """
+    An abstract task for executing an RDBMS query.
+
+    Usage:
+
+        Subclass and override the following attributes:
+
+        * `host`,
+        * `database`,
+        * `user`,
+        * `password`,
+        * `table`,
+        * `query`
+
+        Subclass and override the following methods:
+
+        * `output`
+    """
+
+    @abc.abstractproperty
+    def host(self):
+        return None
+
+    @abc.abstractproperty
+    def database(self):
+        return None
+
+    @abc.abstractproperty
+    def user(self):
+        return None
+
+    @abc.abstractproperty
+    def password(self):
+        return None
+
+    @abc.abstractproperty
+    def table(self):
+        return None
+
+    @abc.abstractproperty
+    def query(self):
+        return None
+
+    @abc.abstractmethod
+    def run(self):
+        raise NotImplementedError("This method must be overridden")
+
+    @abc.abstractmethod
+    def output(self):
+        """
+        Override with an RDBMS Target (e.g. PostgresTarget or RedshiftTarget) to record execution in a marker table
+        """
+        raise NotImplementedError("This method must be overridden")
+
+    @property
+    def update_id(self):
+        """
+        Override to create a custom marker table 'update_id' signature for Query subclass task instances
+        """
+        return self.task_id
