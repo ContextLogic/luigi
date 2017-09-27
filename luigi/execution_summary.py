@@ -206,18 +206,15 @@ def _ranging_attributes(attributes, param_class):
     """
     Checks if there is a continuous range
     """
-    if len(attributes) > 2:
-        # if params are dicts, this fails completely. just return False if
-        # there is a parse error on the param
-        try:
-            if unique_param[1].next_in_enumeration(attributes[0]) is None:
-                return False
-            for i in range(1, len(attributes)):
-                if unique_param[1].next_in_enumeration(attributes[i - 1]) != attributes[i]:
-                    return False
-        except:
-            return False
-    return True
+    next_attributes = {param_class.next_in_enumeration(attribute) for attribute in attributes}
+    in_first = attributes.difference(next_attributes)
+    in_second = next_attributes.difference(attributes)
+    if len(in_first) == 1 and len(in_second) == 1:
+        for x in attributes:
+            if {param_class.next_in_enumeration(x)} == in_second:
+                return next(iter(in_first)), x
+    return None, None
+
 
 def _get_str_one_parameter(tasks):
     row = ''
