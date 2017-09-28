@@ -219,7 +219,7 @@ def send_email_ses(sender, subject, message, recipients, image_png):
     """
     from boto3 import client as boto3_client
 
-    client = boto3_client('ses')
+    client = boto3_client('ses',region_name='us-east-1')
 
     msg_root = generate_email(sender, subject, message, recipients, image_png)
     response = client.send_raw_email(Source=sender,
