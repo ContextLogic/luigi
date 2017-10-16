@@ -50,23 +50,29 @@ function visualiserApp(luigi) {
     function taskToDisplayTask(task) {
         var taskName = task.name;
         var taskParams = JSON.stringify(task.params);
-        var displayTime = new Date(Math.floor(task.last_updated*1000)).toLocaleString();
+        var taskTeam = task.params.team;
+        var taskOwner = task.params.owner;
+        var displayScheduledDate = task.params.date;
+        var displayRunTime = new Date(Math.floor(task.last_updated*1000)).toLocaleString();
         var time_running = -1;
         if (task.status == "RUNNING" && "time_running" in task) {
             var current_time = new Date().getTime();
             var minutes_running = Math.round((current_time - task.time_running * 1000) / 1000 / 60);
             time_running = task.time_running;
-            displayTime += " | " + minutes_running + " minutes";
+            displayRunTime += " | " + minutes_running + " minutes";
         }
         return {
             taskId: task.taskId,
             encodedTaskId: encodeURIComponent(task.taskId),
             taskName: taskName,
+            taskTeam: taskTeam,
+            taskOwner: taskOwner,
             taskParams: taskParams,
             displayName: task.display_name,
             priority: task.priority,
             resources: JSON.stringify(task.resources).replace(/,"/g, ', "'),
-            displayTime: displayTime,
+            displayScheduledDate: displayScheduledDate,
+            displayRunTime: displayRunTime,
             displayTimestamp: task.last_updated,
             timeRunning: time_running,
             trackingUrl: task.tracking_url,
@@ -1140,20 +1146,24 @@ function visualiserApp(luigi) {
                         return taskCategoryIcon(data) + ' ' + data;
                     }
                 },
-                {data: 'taskName'},
-                {
-                    data: 'taskParams',
-                    render: function(data, type, row) {
-                        var params = JSON.parse(data);
-                        if (row.resources !== '{}') {
-                            return '<div>' + renderParams(params) + '</div><div>' + row.resources + '</div>';
-                        } else {
-                            return '<div>' + renderParams(params) + '</div>';
-                        }
-                    }
-                },
+                {data: 'taskName','defaultContent': ''},
+                {data: 'displayScheduledDate','defaultContent': ''},
+                {data: 'taskTeam','defaultContent': ''},
+                {data: 'taskOwner','defaultContent': ''},
+//                {
+//                    data: 'taskParams',
+//                    render: function(data, type, row) {
+//                        var params = JSON.parse(data);
+//                        if (row.resources !== '{}') {
+//                            return '<div>' + renderParams(params) + '</div><div>' + row.resources + '</div>';
+//                        } else {
+//                            return '<div>' + renderParams(params) + '</div>';
+//                        }
+//                    }
+//                },
+                {data: 'displayRunTime','defaultContent': ''},
                 {data: 'priority', width: "2em"},
-                {data: 'displayTime'},
+                {data: 'resources','defaultContent': ''},
                 {
                     className: 'details-control',
                     orderable: false,

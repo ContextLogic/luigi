@@ -178,18 +178,24 @@
                     <table class="table table-striped worker-table">
                       <thead>
                         <th>Name</th>
+                        <th>Date</th>
+                        <th>Team</th>
+                        <th>Owner</th>
+                        <th>Run Time</th>
                         <th>Priority</th>
                         <th>Resources</th>
-                        <th>Time</th>
                         <th>Actions</th>
                       </thead>
                       <tbody>
                       {{#tasks}}
                       <tr>
-                        <td>{{displayName}}</td>
+                        <td>{{taskName}}</td>
+                        <td>{{displayScheduledDate}}</td>
+                        <td>{{taskTeam}}</td>
+                        <td>{{taskOwner}}</td>
+                        <td>{{displayRunTime}}</td>
                         <td>{{priority}}</td>
                         <td>{{resources}}</td>
-                        <td>{{displayTime}}</td>
                         <td><a href="#tab=graph&taskId={{encodedTaskId}}" class="btn btn-info btn-xs" title="View graph" data-toggle="tooltip" data-action="drawGraph"><i class="fa fa-sitemap"/></a>
                           {{#trackingUrl}}<a target="_blank" href="{{trackingUrl}}" class="btn btn-primary btn-xs" title="Track Progress" data-toggle="tooltip"><i class="fa fa-eye"></i></a>{{/trackingUrl}}
                           {{#statusMessage}}<button class="btn btn-primary btn-xs statusMessage" title="Status message" data-toggle="tooltip" data-task-id="{{taskId}}" data-display-name="{{displayName}}"><i class="fa fa-comment"></i></button>{{/statusMessage}}
@@ -265,16 +271,22 @@
                     <table class="table table-striped worker-table">
                         <thead>
                             <th>Name</th>
+                            <th>Date</th>
+                            <th>Team</th>
+                            <th>Owner</th>
+                            <th>Run Time</th>
                             <th>Priority</th>
-                            <th>Time</th>
                             <th>Actions</th>
                         </thead>
                         <tbody>
                             {{#tasks}}
                             <tr>
-                                <td>{{displayName}}</td>
+                                <td>{{taskName}}</td>
+                                <td>{{displayScheduledDate}}</td>
+                                <td>{{taskTeam}}</td>
+                                <td>{{taskOwner}}</td>
+                                <td>{{displayRunTime}}</td>
                                 <td>{{priority}}</td>
-                                <td>{{displayTime}}</td>
                                 <td><a href="#tab=graph&taskId={{taskId}}&hideDone=1" class="btn btn-info btn-xs" title="View graph" data-toggle="tooltip" data-action="drawGraph"><i class="fa fa-sitemap"/></a></td>
                             </tr>
                             {{/tasks}}
@@ -456,9 +468,12 @@
                   <thead>
                     <th><!-- Category --></th>
                     <th>Name</th>
-                    <th>Details</th>
+                    <th>Date</th>
+                    <th>Team</th>
+                    <th>Owner</th>
+                    <th>Run Time</th>
                     <th>Priority</th>
-                    <th>Time</th>
+                    <th>Resources</th>
                     <th>Actions</th>
                   </thead>
                 </table>
