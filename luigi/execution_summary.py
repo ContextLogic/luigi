@@ -145,16 +145,19 @@ def _get_str(task_dict, extra_indent):
             line = prefix + '- {0} {1}({2}={3})'.format(len(tasks), task_family, tasks[0].get_params()[0][0], param_str)
         else:
             ranging = False
-            params = _get_set_of_params(tasks)
-            unique_param_keys = list(_get_unique_param_keys(params))
-            if len(unique_param_keys) == 1:
-                unique_param, = unique_param_keys
-                attributes = params[unique_param]
-                param_class = unique_param[1]
-                first, last = _ranging_attributes(attributes, param_class)
-                if first is not None and last is not None and len(attributes) > 2:
-                    ranging = True
-                    line = prefix + '- {0} {1}({2}'.format(len(tasks), task_family, _get_str_ranging_multiple_parameters(first, last, tasks, unique_param))
+            try:
+                params = _get_set_of_params(tasks)
+                unique_param_keys = list(_get_unique_param_keys(params))
+                if len(unique_param_keys) == 1:
+                    unique_param, = unique_param_keys
+                    attributes = params[unique_param]
+                    param_class = unique_param[1]
+                    first, last = _ranging_attributes(attributes, param_class)
+                    if first is not None and last is not None and len(attributes) > 2:
+                        ranging = True
+                        line = prefix + '- {0} {1}({2}'.format(len(tasks), task_family, _get_str_ranging_multiple_parameters(first, last, tasks, unique_param))
+            except:
+                pass
             if not ranging:
                 if len(tasks) == 1:
                     line = prefix + '- {0} {1}'.format(len(tasks), tasks[0])
