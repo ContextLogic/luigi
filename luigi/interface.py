@@ -23,6 +23,7 @@ defined in this module to programatically run luigi.
 
 import logging
 import logging.config
+import getpass
 import os
 import sys
 import tempfile
@@ -39,6 +40,7 @@ from luigi import worker
 from luigi import execution_summary
 from luigi.cmdline_parser import CmdlineParser
 
+TRON_USERNAME = 'tron'
 
 def setup_interface_logging(conf_file='', level_name='DEBUG'):
     # use a variable in the function object to determine if it has run before
@@ -46,6 +48,14 @@ def setup_interface_logging(conf_file='', level_name='DEBUG'):
         return
 
     if conf_file == '':
+        # Raise log level if the user is tron
+        try:
+            username = getpass.getuser()
+            if username == TRON_USERNAME:
+                level_name = 'WARNING'
+        except BaseException:
+            pass
+
         # no log config given, setup default logging
         level = getattr(logging, level_name, logging.DEBUG)
 
@@ -201,7 +211,7 @@ def _schedule_and_run(tasks, worker_scheduler_factory=None, override_defaults=No
             success &= worker.add(t, env_params.parallel_scheduling)
         logger.info('Done scheduling tasks')
         success &= worker.run()
-    logger.info(execution_summary.summary(worker))
+    logger.warning(execution_summary.summary(worker))
     return dict(success=success, worker=worker)
 
 
