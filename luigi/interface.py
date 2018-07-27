@@ -211,7 +211,7 @@ def _schedule_and_run(tasks, worker_scheduler_factory=None, override_defaults=No
             success &= worker.add(t, env_params.parallel_scheduling)
         logger.info('Done scheduling tasks')
         success &= worker.run()
-    logger.warning(execution_summary.summary(worker))
+    logger.info(execution_summary.summary(worker))
     return dict(success=success, worker=worker)
 
 
